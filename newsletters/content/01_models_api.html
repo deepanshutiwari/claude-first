@@ -1,0 +1,17 @@
+<p>Today you're starting the most important foundation of the exam: understanding what Claude <em>is</em> before you architect with it. Miss this and every downstream decision becomes a guess.</p>
+
+<p>Claude comes in three tiers, and the choice between them is an architectural decision you'll make daily. <strong>Haiku</strong> is the speed demon — sub-second responses, the lowest cost per token, perfect for classification, routing, extraction, and any task where you need Claude to be invisible infrastructure. <strong>Sonnet</strong> is your workhorse — the balanced choice that handles 80% of real workloads well. <strong>Opus</strong> is the deep thinker — reserve it for complex reasoning chains, legal analysis, and tasks where getting it wrong is expensive.</p>
+
+<p>The API itself has one core shape: a <code>messages</code> array where you alternate <code>user</code> and <code>assistant</code> turns. The <code>system</code> parameter sits outside this array — it's not a message, it's the frame. Every request also takes <code>model</code>, <code>max_tokens</code> (required), and optional sampling parameters.</p>
+
+<p>Token limits are architectural constraints, not suggestions. Claude's context window determines how much history, documents, and instructions you can pass at once. When you're designing a document analysis system, the context window sets your maximum document size. When you're building a chatbot, it limits conversation history length before you need to summarize.</p>
+
+<blockquote><p><strong>Version pinning in production is non-negotiable.</strong> Using <code>claude-opus-4-8</code> instead of <code>claude-opus-latest</code> means a model update never silently changes your application's behavior. Always pin. Always.</p></blockquote>
+
+<p>Sampling parameters: <code>temperature</code> controls randomness (0 = deterministic, 1 = creative). For data extraction and structured output, use 0. For creative writing, try 0.7–1.0. <code>top_p</code> and <code>top_k</code> are alternative sampling strategies — in practice, just use <code>temperature</code> and leave the others at defaults unless you have a specific reason.</p>
+
+<p><code>max_tokens</code> is a hard ceiling. When Claude hits it mid-sentence, it stops. The <code>stop_reason</code> in the response tells you why it stopped: <code>end_turn</code> (natural completion), <code>max_tokens</code> (truncated), <code>stop_sequence</code> (hit a custom stop), or <code>tool_use</code> (wants to call a tool). Always check <code>stop_reason</code> in production — truncated responses are silent failures without it.</p>
+
+<p>Rate limits are per-model, per-organization, and measured in both requests-per-minute and tokens-per-minute. Design for exponential backoff on 429s from day one. The pattern: catch the 429, read the <code>retry-after</code> header, wait that long, then retry. Never hammer on 529 (overload) errors — back off aggressively.</p>
+
+<p>The model you choose on day one will be the model you're debugging at 2am on day 300. Choose deliberately.</p>

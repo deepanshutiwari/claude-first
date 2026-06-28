@@ -1,0 +1,232 @@
+[
+  {
+    "number": 1,
+    "title": "Claude Models & API Fundamentals",
+    "emoji": "🧠",
+    "tagline": "Know your tools before you build with them",
+    "subtopics": [
+      "Model family overview: Haiku, Sonnet, Opus — when to use each",
+      "Context windows, token limits, and what they mean architecturally",
+      "API request structure: messages, roles, system prompts",
+      "Model versioning and how to pin versions in production",
+      "Temperature, top_p, top_k — what they control and when to tune them",
+      "Stop sequences and max_tokens — practical usage",
+      "Rate limits, error codes, and retry strategies"
+    ],
+    "exam_gotcha": "The Messages API uses 'assistant' role for Claude's responses, not 'ai' or 'claude'. Many questions test this.",
+    "key_concept": "Model selection is an architectural decision — Haiku for speed/cost, Sonnet for balance, Opus for complex reasoning.",
+    "quiz_questions": [
+      {"q": "Which Claude model family is optimized for speed and low cost?", "a": "Haiku"},
+      {"q": "What is the role name used for Claude's responses in the Messages API?", "a": "assistant"},
+      {"q": "What parameter controls the randomness of Claude's output?", "a": "temperature"},
+      {"q": "What happens when max_tokens is reached before a natural stop?", "a": "The response is truncated at that token limit with stop_reason 'max_tokens'"}
+    ]
+  },
+  {
+    "number": 2,
+    "title": "Prompt Engineering Deep Dive",
+    "emoji": "✍️",
+    "tagline": "The difference between a good prompt and a great one is architecture",
+    "subtopics": [
+      "Zero-shot vs few-shot vs chain-of-thought prompting",
+      "XML tags for structure — why Claude responds well to them",
+      "Role prompting and persona assignment",
+      "Instruction ordering — Claude reads top-to-bottom, weight it accordingly",
+      "Avoiding prompt injection and adversarial inputs",
+      "Iterative prompt refinement methodology",
+      "Prompt chaining for complex tasks"
+    ],
+    "exam_gotcha": "Claude is trained to follow instructions in order of specificity. System prompt > human turn. Later instructions in the same turn can override earlier ones.",
+    "key_concept": "XML tags (<example>, <instructions>, <context>) are not just aesthetic — they help Claude segment information and follow structure reliably.",
+    "quiz_questions": [
+      {"q": "Which prompting technique asks Claude to show its reasoning before giving a final answer?", "a": "Chain-of-thought (CoT) prompting"},
+      {"q": "Which has higher priority: system prompt instructions or user turn instructions?", "a": "System prompt instructions take precedence"},
+      {"q": "What HTML-like syntax does Claude respond especially well to for structured prompts?", "a": "XML tags"},
+      {"q": "What is few-shot prompting?", "a": "Providing examples of input-output pairs in the prompt to guide Claude's response format"}
+    ]
+  },
+  {
+    "number": 3,
+    "title": "System Prompts & Context Management",
+    "emoji": "🗂️",
+    "tagline": "Context is the canvas. You decide what Claude sees.",
+    "subtopics": [
+      "System prompt architecture — what belongs there vs the human turn",
+      "Context window management: what to include, what to summarize",
+      "Conversation history strategies for multi-turn apps",
+      "Prompt caching — how it works, when it saves money",
+      "Injecting dynamic context safely",
+      "Token counting before you send",
+      "Long document handling patterns"
+    ],
+    "exam_gotcha": "Prompt caching requires the cached prefix to be identical byte-for-byte. Even a single space difference breaks the cache. Always put stable content (system prompts, long docs) at the top.",
+    "key_concept": "Prompt caching can reduce costs by up to 90% for repeated prefixes — critical for production cost optimization.",
+    "quiz_questions": [
+      {"q": "Where should stable, reused content be placed to benefit from prompt caching?", "a": "At the beginning of the prompt (before dynamic content)"},
+      {"q": "What API feature lets you count tokens before making a full request?", "a": "The token counting API / count_tokens endpoint"},
+      {"q": "What must be true for a prompt cache hit to occur?", "a": "The prefix must be byte-for-byte identical to the previously cached prompt"},
+      {"q": "What strategy helps manage context in long multi-turn conversations?", "a": "Summarizing older turns and replacing them with a compressed summary"}
+    ]
+  },
+  {
+    "number": 4,
+    "title": "Tool Use & Function Calling",
+    "emoji": "🔧",
+    "tagline": "Give Claude hands, not just a mind",
+    "subtopics": [
+      "Tool definition schema — name, description, input_schema",
+      "Single tool vs parallel tool use",
+      "Tool result handling and the tool_result content block",
+      "Forcing tool use with tool_choice parameter",
+      "Building reliable tool descriptions (this is where most failures happen)",
+      "Error handling when tools fail",
+      "Computer use tools — special capabilities and risks"
+    ],
+    "exam_gotcha": "tool_choice: {type: 'tool', name: 'my_tool'} forces a specific tool. tool_choice: {type: 'any'} forces Claude to use at least one tool. Without tool_choice, Claude decides.",
+    "key_concept": "Tool descriptions are prompts — Claude decides whether and how to use a tool based entirely on the description. Vague descriptions = unreliable tool use.",
+    "quiz_questions": [
+      {"q": "What content block type do you use to return tool results to Claude?", "a": "tool_result content block"},
+      {"q": "How do you force Claude to use a specific tool?", "a": "Set tool_choice to {type: 'tool', name: 'tool_name'}"},
+      {"q": "Can Claude call multiple tools in a single response?", "a": "Yes — parallel tool use allows multiple tool calls in one turn"},
+      {"q": "What schema format is used to define tool input parameters?", "a": "JSON Schema"}
+    ]
+  },
+  {
+    "number": 5,
+    "title": "Multi-Agent Architecture",
+    "emoji": "🤖",
+    "tagline": "One Claude is powerful. Many Claudes, coordinated, are transformative.",
+    "subtopics": [
+      "Orchestrator vs subagent roles",
+      "When to use multi-agent vs single-agent",
+      "Trust levels: how much to trust subagent output",
+      "Passing context between agents efficiently",
+      "Preventing prompt injection through agent chains",
+      "Parallelization patterns for speed",
+      "Failure handling and retry logic in agent networks"
+    ],
+    "exam_gotcha": "Subagents should be treated as untrusted by default — a compromised subagent (via prompt injection in retrieved content) can poison an orchestrator. Always validate subagent outputs.",
+    "key_concept": "Multi-agent is not always better. Use it when: tasks are too long for one context window, tasks benefit from parallelism, or independent verification adds value.",
+    "quiz_questions": [
+      {"q": "What role directs other agents and synthesizes results?", "a": "Orchestrator"},
+      {"q": "Why should orchestrators treat subagent outputs with skepticism?", "a": "Subagents may have processed untrusted content that injected malicious instructions"},
+      {"q": "Name two scenarios where multi-agent architecture is clearly beneficial.", "a": "Tasks exceeding one context window; tasks that can run in parallel to save time"},
+      {"q": "What is the main risk of blindly passing subagent output to the next agent?", "a": "Prompt injection — malicious content in retrieved data can hijack the agent chain"}
+    ]
+  },
+  {
+    "number": 6,
+    "title": "Model Context Protocol (MCP)",
+    "emoji": "🔌",
+    "tagline": "The USB-C of AI integrations",
+    "subtopics": [
+      "What MCP is and why it exists",
+      "MCP server vs MCP client architecture",
+      "Three primitives: Tools, Resources, Prompts",
+      "Transport types: stdio vs SSE",
+      "Writing an MCP server from scratch",
+      "Security considerations for MCP servers",
+      "MCP in Claude Desktop vs Claude Code vs API"
+    ],
+    "exam_gotcha": "MCP has three primitives — Tools (actions Claude can call), Resources (data Claude can read), and Prompts (reusable prompt templates). Confusing these is a common exam mistake.",
+    "key_concept": "MCP standardizes how AI models connect to external data and tools — one protocol, any integration. Think of it as an API standard for AI context.",
+    "quiz_questions": [
+      {"q": "What are the three MCP primitives?", "a": "Tools, Resources, and Prompts"},
+      {"q": "What does MCP stand for?", "a": "Model Context Protocol"},
+      {"q": "What are the two transport types supported by MCP?", "a": "stdio (standard input/output) and SSE (Server-Sent Events)"},
+      {"q": "In MCP, what primitive provides reusable prompt templates?", "a": "Prompts"}
+    ]
+  },
+  {
+    "number": 7,
+    "title": "RAG, Memory & Knowledge Patterns",
+    "emoji": "📚",
+    "tagline": "Claude's knowledge ends at training. RAG makes it limitless.",
+    "subtopics": [
+      "RAG architecture — retrieval, augmentation, generation",
+      "Chunking strategies and why they matter",
+      "Embedding models and vector databases",
+      "Reranking for precision",
+      "Memory types: in-context, external, episodic, semantic",
+      "When to use RAG vs fine-tuning vs prompt stuffing",
+      "Handling retrieval failures gracefully"
+    ],
+    "exam_gotcha": "RAG vs fine-tuning: RAG is for dynamic, updatable knowledge. Fine-tuning is for style/behavior change. Most production knowledge retrieval should use RAG, not fine-tuning.",
+    "key_concept": "Chunk size is one of the most impactful RAG tuning decisions — too small loses context, too large reduces precision. 512-1024 tokens with overlap is a common starting point.",
+    "quiz_questions": [
+      {"q": "What does RAG stand for?", "a": "Retrieval-Augmented Generation"},
+      {"q": "When should you prefer RAG over fine-tuning?", "a": "When knowledge needs to be dynamic, updatable, or traceable to sources"},
+      {"q": "What does a reranker do in a RAG pipeline?", "a": "Re-scores retrieved chunks for relevance before passing them to the model"},
+      {"q": "What type of memory persists between sessions in an external database?", "a": "External memory (also called persistent or long-term memory)"}
+    ]
+  },
+  {
+    "number": 8,
+    "title": "Safety, Guardrails & Responsible AI",
+    "emoji": "🛡️",
+    "tagline": "Building powerful AI means building safe AI",
+    "subtopics": [
+      "Constitutional AI — how Claude's values are trained",
+      "Harm categories Claude won't assist with",
+      "Jailbreak patterns and why they (mostly) don't work on Claude",
+      "Input and output filtering strategies",
+      "Content moderation architecture",
+      "The Responsible Scaling Policy (RSP)",
+      "How to handle policy edge cases in your application"
+    ],
+    "exam_gotcha": "Claude's refusals come from trained values, not a keyword blocklist. You cannot bypass them by rephrasing — this is by design. Exam questions often test whether you understand this distinction.",
+    "key_concept": "Constitutional AI trains Claude to critique and revise its own outputs against a set of principles — it's not post-hoc filtering, it's baked into training.",
+    "quiz_questions": [
+      {"q": "What training methodology gives Claude its safety behaviors?", "a": "Constitutional AI (CAI)"},
+      {"q": "Is Claude's refusal behavior based on keyword matching?", "a": "No — it's based on trained values and understanding of intent, not keywords"},
+      {"q": "What is Anthropic's policy for scaling model capabilities safely?", "a": "The Responsible Scaling Policy (RSP)"},
+      {"q": "What are Claude's 'hardcoded' behaviors?", "a": "Absolute limits that cannot be changed by any operator or user prompt — e.g., no CSAM, no bioweapons assistance"}
+    ]
+  },
+  {
+    "number": 9,
+    "title": "Production Architecture: Cost, Latency & Streaming",
+    "emoji": "⚡",
+    "tagline": "A great AI product is useless if it's slow or unaffordable",
+    "subtopics": [
+      "Streaming responses with SSE — why and how",
+      "Batch API for async, high-volume workloads",
+      "Cost optimization strategies: caching, model selection, prompt compression",
+      "Latency optimization: streaming, model choice, parallel calls",
+      "Monitoring and observability for AI systems",
+      "Token budget management at scale",
+      "Fallback strategies when the API is unavailable"
+    ],
+    "exam_gotcha": "The Batch API offers 50% cost reduction but adds latency (responses within 24 hours). It's for async workloads — never for real-time user-facing interactions.",
+    "key_concept": "Streaming (SSE) doesn't reduce total latency — it reduces perceived latency by showing output as it generates. Time-to-first-token matters more than total time for UX.",
+    "quiz_questions": [
+      {"q": "What API feature reduces cost by ~50% for non-real-time workloads?", "a": "The Batch API (Message Batches API)"},
+      {"q": "Does streaming reduce total response generation time?", "a": "No — it reduces perceived latency by surfacing tokens as they're generated"},
+      {"q": "What metric matters most for user-perceived AI response speed?", "a": "Time-to-first-token (TTFT)"},
+      {"q": "Name two strategies to reduce Claude API costs in production.", "a": "Prompt caching, using smaller models (Haiku) for simpler tasks, Batch API for async work"}
+    ]
+  },
+  {
+    "number": 10,
+    "title": "Integration Patterns & Exam Cram",
+    "emoji": "🎓",
+    "tagline": "You've learned the pieces. Now see how they fit.",
+    "subtopics": [
+      "End-to-end architecture patterns: chatbot, agent, RAG system, code assistant",
+      "Choosing the right pattern for the right problem",
+      "Common exam scenario walkthroughs",
+      "Top 20 facts every Claude Architect must know cold",
+      "Tricky API behaviors that trip candidates up",
+      "Reading the Anthropic docs effectively",
+      "Final confidence checklist"
+    ],
+    "exam_gotcha": "The exam tests architecture judgment, not just API knowledge. Questions often present a scenario and ask which approach is BEST — knowing tradeoffs beats memorizing facts.",
+    "key_concept": "Architect-level thinking: always consider cost, latency, safety, and maintainability together. No single dimension wins.",
+    "quiz_questions": [
+      {"q": "A user needs Claude to analyze 500 documents overnight. Which API feature is ideal?", "a": "Batch API (Message Batches) — async, 50% cheaper, no real-time requirement"},
+      {"q": "Your chatbot's context window fills up after 20 turns. What's the best strategy?", "a": "Summarize older turns and replace them with a compressed summary in context"},
+      {"q": "An operator wants to prevent Claude from discussing competitors. Where should this instruction go?", "a": "The system prompt — operators control Claude's behavior via system prompts"},
+      {"q": "What's the safest way to let Claude browse the web?", "a": "Tool use with a controlled web search tool — never give Claude raw browser access without sandboxing"}
+    ]
+  }
+]
