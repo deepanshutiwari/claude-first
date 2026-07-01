@@ -37,7 +37,27 @@ jobs:
             echo "title=$TITLE" >> $GITHUB_OUTPUT
           fi
 
-      - name: Publish as GitHub Release
+      - name: Set up Python
+        if: steps.newsletter.outputs.skip == 'false'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: steps.newsletter.outputs.skip == 'false'
+        run: pip install anthropic
+
+      - name: Send newsletter via Gmail
+        if: steps.newsletter.outputs.skip == 'false'
+        env:
+          START_DATE: "2026-07-01"
+          RECIPIENT_EMAIL: "deepanshurtiwari@gmail.com"
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/send_newsletter.py
+
+      - name: Publish as GitHub Release (backup)
         if: steps.newsletter.outputs.skip == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -47,9 +67,10 @@ jobs:
           TITLE="${{ steps.newsletter.outputs.title }}"
           CONTENT_FILE=$(ls newsletters/content/${PADDED}_*.md 2>/dev/null | head -1)
 
-          if [ -z "$CONTENT_FILE" ]; then
-            echo "No content file found for newsletter $NUM"
-            exit 1
+          # Skip if release already exists
+          if gh release view "newsletter-day-${PADDED}" &>/dev/null; then
+            echo "Release already exists, skipping."
+            exit 0
           fi
 
           gh release create "newsletter-day-${PADDED}" \
