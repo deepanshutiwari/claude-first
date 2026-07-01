@@ -2,30 +2,54 @@ name: Daily Claude Architect Newsletter
 
 on:
   schedule:
-    # 10:00 AM EST = 15:00 UTC (adjust to 14:00 UTC for EDT / summer)
+    # 10:00 AM EST = 15:00 UTC
     - cron: "0 15 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  send-newsletter:
+  publish-newsletter:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+      - name: Determine newsletter number
+        id: newsletter
+        run: |
+          START="2026-07-01"
+          TODAY=$(date +%Y-%m-%d)
+          DAYS=$(( ($(date -d "$TODAY" +%s) - $(date -d "$START" +%s)) / 86400 + 1 ))
+          echo "Day $DAYS"
+          if [ "$DAYS" -lt 1 ] || [ "$DAYS" -gt 10 ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "number=$DAYS" >> $GITHUB_OUTPUT
+            PADDED=$(printf "%02d" $DAYS)
+            echo "padded=$PADDED" >> $GITHUB_OUTPUT
+            TITLE=$(python3 -c "import json; t=json.load(open('newsletters/topics.json')); print(t[$DAYS-1]['emoji'] + ' ' + t[$DAYS-1]['title'])")
+            echo "title=$TITLE" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Install dependencies
-        run: pip install anthropic
-
-      - name: Send newsletter
+      - name: Publish as GitHub Release
+        if: steps.newsletter.outputs.skip == 'false'
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-          RECIPIENT_EMAIL: "deepanshurtiwari@gmail.com"
-          START_DATE: "2026-07-01"
-        run: python scripts/send_newsletter.py
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NUM=${{ steps.newsletter.outputs.number }}
+          PADDED=${{ steps.newsletter.outputs.padded }}
+          TITLE="${{ steps.newsletter.outputs.title }}"
+          CONTENT_FILE=$(ls newsletters/content/${PADDED}_*.md 2>/dev/null | head -1)
+
+          if [ -z "$CONTENT_FILE" ]; then
+            echo "No content file found for newsletter $NUM"
+            exit 1
+          fi
+
+          gh release create "newsletter-day-${PADDED}" \
+            --title "Day ${NUM}/10: ${TITLE}" \
+            --notes-file "$CONTENT_FILE" \
+            --latest
