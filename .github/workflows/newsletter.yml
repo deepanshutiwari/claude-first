@@ -5,6 +5,9 @@ on:
     # 10:00 AM EST = 15:00 UTC
     - cron: "0 15 * * *"
   workflow_dispatch:
+  push:
+    tags:
+      - 'send-newsletter-*'
 
 permissions:
   contents: write
